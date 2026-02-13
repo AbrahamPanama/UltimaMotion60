@@ -62,7 +62,7 @@ function SyncControls() {
     };
     
     return (
-        <div className="bg-card p-2 border rounded-lg">
+        <div className="bg-card p-2 border rounded-lg shadow-sm">
             <PlayerControls 
                 isPlaying={isPlaying}
                 onPlayPause={handlePlayPause}
@@ -71,7 +71,8 @@ function SyncControls() {
                 onSeek={handleSeek}
                 playbackRate={playbackRate}
                 onRateChange={handleRateChange}
-                isSyncEnabled={false} // Pass false to show controls
+                isSyncEnabled={false} // Pass false to ensure controls are rendered
+                variant="static"      // Render as static toolbar, not overlay
             />
         </div>
     );
