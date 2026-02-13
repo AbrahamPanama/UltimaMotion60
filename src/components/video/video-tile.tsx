@@ -50,9 +50,21 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
 
   useEffect(() => {
     const videoElement = videoRef.current;
-    if (!videoElement) return;
+    if (!videoElement || !video) return;
 
-    const handleTimeUpdate = () => setCurrentTime(videoElement.currentTime);
+    const handleTimeUpdate = () => {
+      const now = videoElement.currentTime;
+      // Loop logic
+      if (video.trimEnd && now >= video.trimEnd) {
+        const wasPlaying = !videoElement.paused;
+        videoElement.currentTime = video.trimStart || 0;
+        if (wasPlaying) {
+            videoElement.play();
+        }
+      }
+      setCurrentTime(videoElement.currentTime);
+    };
+
     const handleDurationChange = () => setDuration(videoElement.duration);
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
@@ -62,7 +74,11 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
     videoElement.addEventListener('play', handlePlay);
     videoElement.addEventListener('pause', handlePause);
 
+    // Initialize state when video changes
+    videoElement.currentTime = video.trimStart || 0;
+    setCurrentTime(videoElement.currentTime);
     if (videoElement.duration) setDuration(videoElement.duration);
+    setIsPlaying(!videoElement.paused);
 
     return () => {
       videoElement.removeEventListener('timeupdate', handleTimeUpdate);
@@ -86,8 +102,11 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
   const handleSeek = (time: number) => {
     const videoElement = videoRef.current;
     if (videoElement) {
-      videoElement.currentTime = time;
-      setCurrentTime(time);
+      // Clamp seek time within trim range if it exists
+      const start = video?.trimStart || 0;
+      const end = video?.trimEnd || videoElement.duration;
+      videoElement.currentTime = Math.max(start, Math.min(time, end));
+      setCurrentTime(videoElement.currentTime);
     }
   };
 
@@ -143,7 +162,6 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
         ref={videoRef}
         src={video.url}
         className="w-full h-full object-contain"
-        loop
         playsInline
       />
       <PlayerControls
