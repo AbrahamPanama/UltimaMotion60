@@ -35,19 +35,27 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
   const [playbackRate, setPlaybackRate] = useState(1.0);
   const { toast } = useToast();
 
+  // Handle ref assignment and cleanup
   useEffect(() => {
     if (videoRefs.current) {
       videoRefs.current[index] = videoRef.current;
     }
-  }, [index, videoRefs]);
+    return () => {
+      // Clean up ref on unmount to prevent stale references in SyncControls
+      if (videoRefs.current) {
+        videoRefs.current[index] = null;
+      }
+    };
+  }, [index, videoRefs, video]);
 
+  // Mute/unmute based on active state
   useEffect(() => {
     const videoElement = videoRef.current;
     if (!videoElement) return;
-
     videoElement.muted = !isActive;
   }, [isActive]);
 
+  // Handle all video event listeners, state updates, and looping
   useEffect(() => {
     const videoElement = videoRef.current;
     if (!videoElement || !video) return;
@@ -59,7 +67,7 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
         const wasPlaying = !videoElement.paused;
         videoElement.currentTime = video.trimStart || 0;
         if (wasPlaying) {
-            videoElement.play();
+          videoElement.play().catch(e => console.warn("Loop play failed", e));
         }
       }
       setCurrentTime(videoElement.currentTime);

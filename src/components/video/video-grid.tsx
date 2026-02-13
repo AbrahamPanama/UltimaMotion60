@@ -6,16 +6,21 @@ import { useEffect, useState } from 'react';
 import PlayerControls from './player-controls';
 
 function SyncControls() {
-    const { videoRefs, slots } = useAppContext(); // Added slots to dependencies
+    const { videoRefs, slots } = useAppContext();
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [playbackRate, setPlaybackRate] = useState(1.0);
 
-    // Effect to bind listeners to the "Master" video (the first available one)
+    // Helper to get all valid, connected video elements
+    const getActiveVideos = () => {
+        return videoRefs.current.filter(video => video !== null && video.isConnected);
+    };
+
     useEffect(() => {
-        // Find the first valid video element to act as master
-        const masterVideo = videoRefs.current.find(ref => ref !== null);
+        const activeVideos = getActiveVideos();
+        // Use the first active video as the master for UI updates
+        const masterVideo = activeVideos[0];
         
         if (masterVideo) {
             const updateState = () => {
@@ -25,7 +30,6 @@ function SyncControls() {
                 setPlaybackRate(masterVideo.playbackRate);
             };
             
-            // Sync initial state
             updateState();
 
             masterVideo.addEventListener('play', updateState);
@@ -42,33 +46,35 @@ function SyncControls() {
                 masterVideo.removeEventListener('loadedmetadata', updateState);
             };
         }
-    }, [videoRefs, slots]); // Re-run when videos are added/removed
+    }, [videoRefs, slots]);
 
     const handlePlayPause = () => {
+        const activeVideos = getActiveVideos();
         const shouldPlay = !isPlaying;
         
-        // Apply to all active videos
-        videoRefs.current.forEach(video => {
-            if (video) {
-                if (shouldPlay) {
-                    video.play().catch(e => console.warn("Play interrupted", e));
-                } else {
-                    video.pause();
-                }
+        activeVideos.forEach(video => {
+            if (shouldPlay) {
+                if (video.ended) video.currentTime = 0;
+                video.play().catch(e => console.error("Sync play failed for video:", e));
+            } else {
+                video.pause();
             }
         });
+        
         setIsPlaying(shouldPlay);
     };
     
     const handleSeek = (time: number) => {
-        videoRefs.current.forEach(video => {
+        const activeVideos = getActiveVideos();
+        activeVideos.forEach(video => {
             if (video) video.currentTime = time;
         });
         setCurrentTime(time);
     };
 
     const handleRateChange = (rate: number) => {
-        videoRefs.current.forEach(video => {
+        const activeVideos = getActiveVideos();
+        activeVideos.forEach(video => {
             if (video) video.playbackRate = rate;
         });
         setPlaybackRate(rate);
