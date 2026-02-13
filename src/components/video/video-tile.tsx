@@ -128,7 +128,10 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <div className="bg-muted/50 border-2 border-dashed rounded-lg flex items-center justify-center aspect-video cursor-pointer hover:border-primary transition-colors">
+          <div
+            suppressHydrationWarning
+            className="bg-muted/50 border-2 border-dashed rounded-lg flex items-center justify-center aspect-video cursor-pointer hover:border-primary transition-colors"
+          >
             <div className="text-center text-muted-foreground">
               <PlusCircle className="mx-auto h-12 w-12" />
               <p className="mt-2 font-medium">Add Video</p>
