@@ -6,45 +6,58 @@ import { useEffect, useState } from 'react';
 import PlayerControls from './player-controls';
 
 function SyncControls() {
-    const { videoRefs } = useAppContext();
+    const { videoRefs, slots } = useAppContext(); // Added slots to dependencies
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [playbackRate, setPlaybackRate] = useState(1.0);
 
+    // Effect to bind listeners to the "Master" video (the first available one)
     useEffect(() => {
-        const firstVideo = videoRefs.current[0];
-        if (firstVideo) {
+        // Find the first valid video element to act as master
+        const masterVideo = videoRefs.current.find(ref => ref !== null);
+        
+        if (masterVideo) {
             const updateState = () => {
-                setIsPlaying(!firstVideo.paused);
-                setCurrentTime(firstVideo.currentTime);
-                setDuration(firstVideo.duration || 0);
-                setPlaybackRate(firstVideo.playbackRate);
+                setIsPlaying(!masterVideo.paused);
+                setCurrentTime(masterVideo.currentTime);
+                setDuration(masterVideo.duration || 0);
+                setPlaybackRate(masterVideo.playbackRate);
             };
+            
+            // Sync initial state
             updateState();
-            firstVideo.addEventListener('play', updateState);
-            firstVideo.addEventListener('pause', updateState);
-            firstVideo.addEventListener('timeupdate', updateState);
-            firstVideo.addEventListener('ratechange', updateState);
+
+            masterVideo.addEventListener('play', updateState);
+            masterVideo.addEventListener('pause', updateState);
+            masterVideo.addEventListener('timeupdate', updateState);
+            masterVideo.addEventListener('ratechange', updateState);
+            masterVideo.addEventListener('loadedmetadata', updateState);
 
             return () => {
-                firstVideo.removeEventListener('play', updateState);
-                firstVideo.removeEventListener('pause', updateState);
-                firstVideo.removeEventListener('timeupdate', updateState);
-                firstVideo.removeEventListener('ratechange', updateState);
+                masterVideo.removeEventListener('play', updateState);
+                masterVideo.removeEventListener('pause', updateState);
+                masterVideo.removeEventListener('timeupdate', updateState);
+                masterVideo.removeEventListener('ratechange', updateState);
+                masterVideo.removeEventListener('loadedmetadata', updateState);
             };
         }
-    }, [videoRefs]);
+    }, [videoRefs, slots]); // Re-run when videos are added/removed
 
     const handlePlayPause = () => {
-        const play = !isPlaying;
+        const shouldPlay = !isPlaying;
+        
+        // Apply to all active videos
         videoRefs.current.forEach(video => {
             if (video) {
-                if (play) video.play();
-                else video.pause();
+                if (shouldPlay) {
+                    video.play().catch(e => console.warn("Play interrupted", e));
+                } else {
+                    video.pause();
+                }
             }
         });
-        setIsPlaying(play);
+        setIsPlaying(shouldPlay);
     };
     
     const handleSeek = (time: number) => {
@@ -62,7 +75,7 @@ function SyncControls() {
     };
     
     return (
-        <div className="bg-card p-2 border rounded-lg shadow-sm">
+        <div className="bg-card p-2 border rounded-lg shadow-sm mt-auto">
             <PlayerControls 
                 isPlaying={isPlaying}
                 onPlayPause={handlePlayPause}
@@ -71,8 +84,8 @@ function SyncControls() {
                 onSeek={handleSeek}
                 playbackRate={playbackRate}
                 onRateChange={handleRateChange}
-                isSyncEnabled={false} // Pass false to ensure controls are rendered
-                variant="static"      // Render as static toolbar, not overlay
+                isSyncEnabled={false} 
+                variant="static"
             />
         </div>
     );
@@ -89,8 +102,8 @@ export default function VideoGrid() {
   };
 
   return (
-    <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-        <div className={cn('grid gap-4 flex-1 content-start', gridClasses[layout])}>
+    <div className="flex-1 flex flex-col gap-4 overflow-hidden h-full">
+        <div className={cn('grid gap-4 flex-1 content-start min-h-0', gridClasses[layout])}>
         {slots.slice(0, layout).map((video, index) => (
             <VideoTile
             key={index}
