@@ -62,12 +62,14 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
 
     const handleTimeUpdate = () => {
       const now = videoElement.currentTime;
-      // Loop logic
-      if (video.trimEnd && now >= video.trimEnd) {
-        const wasPlaying = !videoElement.paused;
-        videoElement.currentTime = video.trimStart || 0;
-        if (wasPlaying) {
-          videoElement.play().catch(e => console.warn("Loop play failed", e));
+      
+      // Client-side loop enforcement when sync is off
+      if (!isSyncEnabled) {
+        const end = video.trimEnd || videoElement.duration;
+        const start = video.trimStart || 0;
+        if (now >= end) {
+          videoElement.currentTime = start;
+          if (!videoElement.paused) videoElement.play().catch(e => console.warn("Loop play failed", e));
         }
       }
       setCurrentTime(videoElement.currentTime);
@@ -94,7 +96,7 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
       videoElement.removeEventListener('play', handlePlay);
       videoElement.removeEventListener('pause', handlePause);
     };
-  }, [video]);
+  }, [video, isSyncEnabled]);
   
   const handlePlayPause = () => {
     const videoElement = videoRef.current;
@@ -173,6 +175,7 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
         ref={videoRef}
         src={video.url}
         className="w-full h-full object-contain"
+        loop={!isSyncEnabled}
         playsInline
       />
       <PlayerControls
