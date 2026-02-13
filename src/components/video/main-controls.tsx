@@ -3,10 +3,10 @@ import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Square, Rows, Grid, RadioTower } from 'lucide-react';
+import { Square, Rows, Grid, RadioTower, Smartphone } from 'lucide-react';
 
 export default function MainControls() {
-  const { layout, setLayout, isSyncEnabled, toggleSync } = useAppContext();
+  const { layout, setLayout, isSyncEnabled, toggleSync, isPortraitMode, togglePortraitMode } = useAppContext();
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 border rounded-lg bg-card">
@@ -37,16 +37,29 @@ export default function MainControls() {
           <span className="sr-only">4 Tile Layout</span>
         </Button>
       </div>
-      <div className="flex items-center space-x-2">
-        <RadioTower className="h-5 w-5 text-muted-foreground"/>
-        <Label htmlFor="sync-mode" className="font-medium">
-          Sync Playback
-        </Label>
-        <Switch
-          id="sync-mode"
-          checked={isSyncEnabled}
-          onCheckedChange={toggleSync}
-        />
+      <div className="flex items-center gap-4">
+        <div className="flex items-center space-x-2">
+          <Smartphone className="h-5 w-5 text-muted-foreground" />
+          <Label htmlFor="portrait-mode" className="font-medium">
+            Portrait
+          </Label>
+          <Switch
+            id="portrait-mode"
+            checked={isPortraitMode}
+            onCheckedChange={togglePortraitMode}
+          />
+        </div>
+        <div className="flex items-center space-x-2">
+          <RadioTower className="h-5 w-5 text-muted-foreground" />
+          <Label htmlFor="sync-mode" className="font-medium">
+            Sync Playback
+          </Label>
+          <Switch
+            id="sync-mode"
+            checked={isSyncEnabled}
+            onCheckedChange={toggleSync}
+          />
+        </div>
       </div>
     </div>
   );

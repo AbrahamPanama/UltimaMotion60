@@ -20,14 +20,15 @@ interface VideoTileProps {
 }
 
 export default function VideoTile({ video, index, isActive }: VideoTileProps) {
-  const { 
-    setActiveTileIndex, 
-    videoRefs, 
-    isSyncEnabled, 
-    library, 
-    setSlot 
+  const {
+    setActiveTileIndex,
+    videoRefs,
+    isSyncEnabled,
+    isPortraitMode,
+    library,
+    setSlot
   } = useAppContext();
-  
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -90,12 +91,12 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
 
     return () => {
       videoElement.removeEventListener('timeupdate', handleTimeUpdate);
-      videoElement.removeEventListener('durationchange',handleDurationChange);
+      videoElement.removeEventListener('durationchange', handleDurationChange);
       videoElement.removeEventListener('play', handlePlay);
       videoElement.removeEventListener('pause', handlePause);
     };
   }, [video]);
-  
+
   const handlePlayPause = () => {
     const videoElement = videoRef.current;
     if (videoElement) {
@@ -138,7 +139,10 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
         <DropdownMenuTrigger asChild>
           <div
             suppressHydrationWarning
-            className="bg-muted/50 border-2 border-dashed rounded-lg flex items-center justify-center aspect-video cursor-pointer hover:border-primary transition-colors"
+            className={cn(
+              "bg-muted/50 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-primary transition-colors",
+              isPortraitMode ? 'aspect-[9/16]' : 'aspect-video'
+            )}
           >
             <div className="text-center text-muted-foreground">
               <PlusCircle className="mx-auto h-12 w-12" />
@@ -164,7 +168,8 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
   return (
     <div
       className={cn(
-        'relative aspect-video bg-black rounded-lg overflow-hidden group transition-all duration-300',
+        'relative bg-black rounded-lg overflow-hidden group transition-all duration-300',
+        isPortraitMode ? 'aspect-[9/16]' : 'aspect-video',
         isActive ? 'ring-4 ring-primary shadow-2xl' : 'ring-2 ring-transparent'
       )}
       onClick={() => setActiveTileIndex(index)}
@@ -172,7 +177,10 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
       <video
         ref={videoRef}
         src={video.url}
-        className="w-full h-full object-contain"
+        className={cn(
+          'w-full h-full',
+          isPortraitMode ? 'object-cover' : 'object-contain'
+        )}
         playsInline
       />
       <PlayerControls

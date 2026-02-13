@@ -24,6 +24,9 @@ interface AppContextType {
   isSyncEnabled: boolean;
   toggleSync: () => void;
 
+  isPortraitMode: boolean;
+  togglePortraitMode: () => void;
+
   activeTileIndex: number | null;
   setActiveTileIndex: (index: number | null) => void;
 
@@ -37,6 +40,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [slots, setSlots] = useState<(Video | null)[]>(Array(MAX_SLOTS).fill(null));
   const [layout, setLayout] = useState<Layout>(1);
   const [isSyncEnabled, setIsSyncEnabled] = useState<boolean>(false);
+  const [isPortraitMode, setIsPortraitMode] = useState<boolean>(false);
   const [activeTileIndex, setActiveTileIndex] = useState<number | null>(0);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const { toast } = useToast();
@@ -73,9 +77,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         ...videoData,
         id: (typeof crypto.randomUUID === 'function')
           ? crypto.randomUUID()
-          : ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c: any) =>
-            (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-          ),
+          : `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         createdAt: new Date(),
       };
       await addVideoDB(newVideo);
@@ -119,6 +121,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleSync = () => setIsSyncEnabled(prev => !prev);
+  const togglePortraitMode = () => setIsPortraitMode(prev => !prev);
 
   const handleSetActiveTileIndex = (index: number | null) => {
     if (index !== null && index >= layout) {
@@ -139,6 +142,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setLayout: handleSetLayout,
     isSyncEnabled,
     toggleSync,
+    isPortraitMode,
+    togglePortraitMode,
     activeTileIndex,
     setActiveTileIndex: handleSetActiveTileIndex,
     videoRefs,
