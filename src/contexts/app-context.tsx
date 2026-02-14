@@ -14,6 +14,7 @@ interface AppContextType {
   loadLibrary: () => Promise<void>;
   addVideoToLibrary: (video: Omit<Video, 'id' | 'url' | 'createdAt'>) => Promise<void>;
   removeVideoFromLibrary: (id: string) => Promise<void>;
+<<<<<<< HEAD
   
   slots: (Video | null)[];
   setSlot: (index: number, video: Video | null) => void;
@@ -24,6 +25,21 @@ interface AppContextType {
   isSyncEnabled: boolean;
   toggleSync: () => void;
   
+=======
+
+  slots: (Video | null)[];
+  setSlot: (index: number, video: Video | null) => void;
+
+  layout: Layout;
+  setLayout: (layout: Layout) => void;
+
+  isSyncEnabled: boolean;
+  toggleSync: () => void;
+
+  isPortraitMode: boolean;
+  togglePortraitMode: () => void;
+
+>>>>>>> 43a2033310da11e35edb0dbc274841712ec3be85
   activeTileIndex: number | null;
   setActiveTileIndex: (index: number | null) => void;
 
@@ -37,6 +53,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [slots, setSlots] = useState<(Video | null)[]>(Array(MAX_SLOTS).fill(null));
   const [layout, setLayout] = useState<Layout>(1);
   const [isSyncEnabled, setIsSyncEnabled] = useState<boolean>(false);
+<<<<<<< HEAD
+=======
+  const [isPortraitMode, setIsPortraitMode] = useState<boolean>(false);
+>>>>>>> 43a2033310da11e35edb0dbc274841712ec3be85
   const [activeTileIndex, setActiveTileIndex] = useState<number | null>(0);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const { toast } = useToast();
@@ -59,9 +79,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       library.forEach(video => URL.revokeObjectURL(video.url));
     };
+<<<<<<< HEAD
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
+=======
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+>>>>>>> 43a2033310da11e35edb0dbc274841712ec3be85
   useEffect(() => {
     videoRefs.current = videoRefs.current.slice(0, MAX_SLOTS);
   }, []);
@@ -71,7 +97,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const newVideo: Omit<Video, 'url'> = {
         ...videoData,
+<<<<<<< HEAD
         id: crypto.randomUUID(),
+=======
+        id: (typeof crypto.randomUUID === 'function')
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+>>>>>>> 43a2033310da11e35edb0dbc274841712ec3be85
         createdAt: new Date(),
       };
       await addVideoDB(newVideo);
@@ -115,7 +147,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleSync = () => setIsSyncEnabled(prev => !prev);
+<<<<<<< HEAD
   
+=======
+  const togglePortraitMode = () => setIsPortraitMode(prev => !prev);
+
+>>>>>>> 43a2033310da11e35edb0dbc274841712ec3be85
   const handleSetActiveTileIndex = (index: number | null) => {
     if (index !== null && index >= layout) {
       setActiveTileIndex(0);
@@ -135,6 +172,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setLayout: handleSetLayout,
     isSyncEnabled,
     toggleSync,
+<<<<<<< HEAD
+=======
+    isPortraitMode,
+    togglePortraitMode,
+>>>>>>> 43a2033310da11e35edb0dbc274841712ec3be85
     activeTileIndex,
     setActiveTileIndex: handleSetActiveTileIndex,
     videoRefs,

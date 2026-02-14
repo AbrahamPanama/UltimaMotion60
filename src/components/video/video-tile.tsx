@@ -20,6 +20,7 @@ interface VideoTileProps {
 }
 
 export default function VideoTile({ video, index, isActive }: VideoTileProps) {
+<<<<<<< HEAD
   const { 
     setActiveTileIndex, 
     videoRefs, 
@@ -28,6 +29,17 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
     setSlot 
   } = useAppContext();
   
+=======
+  const {
+    setActiveTileIndex,
+    videoRefs,
+    isSyncEnabled,
+    isPortraitMode,
+    library,
+    setSlot
+  } = useAppContext();
+
+>>>>>>> 43a2033310da11e35edb0dbc274841712ec3be85
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -62,6 +74,7 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
 
     const handleTimeUpdate = () => {
       const now = videoElement.currentTime;
+<<<<<<< HEAD
       
       // Client-side loop enforcement when sync is off
       if (!isSyncEnabled) {
@@ -70,6 +83,14 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
         if (now >= end) {
           videoElement.currentTime = start;
           if (!videoElement.paused) videoElement.play().catch(e => console.warn("Loop play failed", e));
+=======
+      // Loop logic
+      if (video.trimEnd && now >= video.trimEnd) {
+        const wasPlaying = !videoElement.paused;
+        videoElement.currentTime = video.trimStart || 0;
+        if (wasPlaying) {
+          videoElement.play().catch(e => console.warn("Loop play failed", e));
+>>>>>>> 43a2033310da11e35edb0dbc274841712ec3be85
         }
       }
       setCurrentTime(videoElement.currentTime);
@@ -92,12 +113,21 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
 
     return () => {
       videoElement.removeEventListener('timeupdate', handleTimeUpdate);
+<<<<<<< HEAD
       videoElement.removeEventListener('durationchange',handleDurationChange);
       videoElement.removeEventListener('play', handlePlay);
       videoElement.removeEventListener('pause', handlePause);
     };
   }, [video, isSyncEnabled]);
   
+=======
+      videoElement.removeEventListener('durationchange', handleDurationChange);
+      videoElement.removeEventListener('play', handlePlay);
+      videoElement.removeEventListener('pause', handlePause);
+    };
+  }, [video]);
+
+>>>>>>> 43a2033310da11e35edb0dbc274841712ec3be85
   const handlePlayPause = () => {
     const videoElement = videoRef.current;
     if (videoElement) {
@@ -140,7 +170,14 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
         <DropdownMenuTrigger asChild>
           <div
             suppressHydrationWarning
+<<<<<<< HEAD
             className="bg-muted/50 border-2 border-dashed rounded-lg flex items-center justify-center aspect-video cursor-pointer hover:border-primary transition-colors"
+=======
+            className={cn(
+              "bg-muted/50 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-primary transition-colors",
+              isPortraitMode ? 'aspect-[9/16]' : 'aspect-video'
+            )}
+>>>>>>> 43a2033310da11e35edb0dbc274841712ec3be85
           >
             <div className="text-center text-muted-foreground">
               <PlusCircle className="mx-auto h-12 w-12" />
@@ -166,7 +203,12 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
   return (
     <div
       className={cn(
+<<<<<<< HEAD
         'relative aspect-video bg-black rounded-lg overflow-hidden group transition-all duration-300',
+=======
+        'relative bg-black rounded-lg overflow-hidden group transition-all duration-300',
+        isPortraitMode ? 'aspect-[9/16]' : 'aspect-video',
+>>>>>>> 43a2033310da11e35edb0dbc274841712ec3be85
         isActive ? 'ring-4 ring-primary shadow-2xl' : 'ring-2 ring-transparent'
       )}
       onClick={() => setActiveTileIndex(index)}
@@ -174,8 +216,15 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
       <video
         ref={videoRef}
         src={video.url}
+<<<<<<< HEAD
         className="w-full h-full object-contain"
         loop={!isSyncEnabled}
+=======
+        className={cn(
+          'w-full h-full',
+          isPortraitMode ? 'object-cover' : 'object-contain'
+        )}
+>>>>>>> 43a2033310da11e35edb0dbc274841712ec3be85
         playsInline
       />
       <PlayerControls
