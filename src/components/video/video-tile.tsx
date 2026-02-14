@@ -129,7 +129,6 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
   const handleSeek = (time: number) => {
     const videoElement = videoRef.current;
     if (videoElement) {
-      // Clamp seek time within trim range if it exists
       const start = video?.trimStart || 0;
       const end = video?.trimEnd || videoElement.duration;
       videoElement.currentTime = Math.max(start, Math.min(time, end));
@@ -154,12 +153,9 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
     const videoElement = videoRef.current;
     if (videoElement) {
       if (isSyncEnabled) {
-        // When sync is ON, update the shared offset — master clock will apply it
         updateSyncOffset(index, seconds);
-        // Also immediately adjust currentTime for instant visual feedback
         videoElement.currentTime = videoElement.currentTime + seconds;
       } else {
-        // When sync is OFF, directly adjust currentTime (local only)
         const start = video?.trimStart || 0;
         const end = video?.trimEnd || videoElement.duration;
         videoElement.currentTime = Math.max(start, Math.min(videoElement.currentTime + seconds, end));
@@ -262,4 +258,3 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
     </div>
   );
 }
-

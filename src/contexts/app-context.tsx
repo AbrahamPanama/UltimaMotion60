@@ -71,42 +71,35 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     loadLibrary();
-
-    return () => {
-      library.forEach(video => URL.revokeObjectURL(video.url));
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    videoRefs.current = videoRefs.current.slice(0, MAX_SLOTS);
-  }, []);
-
+  }, [loadLibrary]);
 
   const addVideoToLibrary = async (videoData: Omit<Video, 'id' | 'url' | 'createdAt'>) => {
     try {
-      const newVideo: Omit<Video, 'url'> = {
+      const newVideo: Video = {
         ...videoData,
-        id: (typeof crypto.randomUUID === 'function')
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        id: crypto.randomUUID(),
+        url: URL.createObjectURL(videoData.blob),
         createdAt: new Date(),
       };
       await addVideoDB(newVideo);
-      await loadLibrary();
-      toast({ title: "Success", description: "Video saved to library." });
+      setLibrary(prev => [...prev, newVideo]);
+      toast({ title: "Video Saved", description: `"${newVideo.name}" has been added to your library.` });
     } catch (error) {
       console.error('Failed to add video:', error);
-      toast({ title: "Error", description: "Failed to save video.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not save video.", variant: "destructive" });
     }
   };
 
   const removeVideoFromLibrary = async (id: string) => {
     try {
       await deleteVideoDB(id);
-      setSlots(prevSlots => prevSlots.map(s => s?.id === id ? null : s));
-      await loadLibrary();
-      toast({ title: "Success", description: "Video removed from library." });
+      setLibrary(prev => {
+        const videoToRemove = prev.find(v => v.id === id);
+        if (videoToRemove) URL.revokeObjectURL(videoToRemove.url);
+        return prev.filter(v => v.id !== id);
+      });
+      setSlots(prevSlots => prevSlots.map(slot => (slot?.id === id ? null : slot)));
+      toast({ title: "Video Removed", description: "The video has been deleted from your library." });
     } catch (error) {
       console.error('Failed to remove video:', error);
       toast({ title: "Error", description: "Failed to remove video.", variant: "destructive" });
@@ -146,6 +139,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const handleSetActiveTileIndex = (index: number | null) => {
+    setActiveTileIndex(index);
+  };
+
   const toggleSync = () => setIsSyncEnabled(prev => !prev);
   const togglePortraitMode = () => setIsPortraitMode(prev => !prev);
   const toggleLoop = () => setIsLoopEnabled(prev => !prev);
@@ -158,14 +155,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return newOffsets;
     });
   }, []);
-
-  const handleSetActiveTileIndex = (index: number | null) => {
-    if (index !== null && index >= layout) {
-      setActiveTileIndex(0);
-    } else {
-      setActiveTileIndex(index);
-    }
-  };
 
   const value = {
     library,
