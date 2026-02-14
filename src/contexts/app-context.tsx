@@ -27,6 +27,15 @@ interface AppContextType {
   isPortraitMode: boolean;
   togglePortraitMode: () => void;
 
+  isLoopEnabled: boolean;
+  toggleLoop: () => void;
+
+  syncOffsets: number[];
+  updateSyncOffset: (index: number, delta: number) => void;
+
+  isMuted: boolean;
+  toggleMute: () => void;
+
   activeTileIndex: number | null;
   setActiveTileIndex: (index: number | null) => void;
 
@@ -41,6 +50,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [layout, setLayout] = useState<Layout>(1);
   const [isSyncEnabled, setIsSyncEnabled] = useState<boolean>(false);
   const [isPortraitMode, setIsPortraitMode] = useState<boolean>(false);
+  const [isLoopEnabled, setIsLoopEnabled] = useState<boolean>(true);
+  const [syncOffsets, setSyncOffsets] = useState<number[]>(Array(MAX_SLOTS).fill(0));
+  const [isMuted, setIsMuted] = useState<boolean>(false);
   const [activeTileIndex, setActiveTileIndex] = useState<number | null>(0);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const { toast } = useToast();
@@ -107,7 +119,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (index >= 0 && index < MAX_SLOTS) {
         newSlots[index] = video;
       }
+      // Auto-expand layout to show all filled slots
+      if (video !== null) {
+        const filledCount = newSlots.filter(s => s !== null).length;
+        const newLayout = filledCount <= 1 ? 1 : filledCount <= 2 ? 2 : 4;
+        if (newLayout > layout) {
+          setLayout(newLayout as Layout);
+        }
+      }
       return newSlots;
+    });
+    // Reset sync offset when a new video is loaded into a slot
+    setSyncOffsets(prev => {
+      const newOffsets = [...prev];
+      newOffsets[index] = 0;
+      return newOffsets;
     });
   };
 
@@ -122,6 +148,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const toggleSync = () => setIsSyncEnabled(prev => !prev);
   const togglePortraitMode = () => setIsPortraitMode(prev => !prev);
+  const toggleLoop = () => setIsLoopEnabled(prev => !prev);
+  const toggleMute = () => setIsMuted(prev => !prev);
+
+  const updateSyncOffset = useCallback((index: number, delta: number) => {
+    setSyncOffsets(prev => {
+      const newOffsets = [...prev];
+      newOffsets[index] = (newOffsets[index] || 0) + delta;
+      return newOffsets;
+    });
+  }, []);
 
   const handleSetActiveTileIndex = (index: number | null) => {
     if (index !== null && index >= layout) {
@@ -144,6 +180,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     toggleSync,
     isPortraitMode,
     togglePortraitMode,
+    isLoopEnabled,
+    toggleLoop,
+    syncOffsets,
+    updateSyncOffset,
+    isMuted,
+    toggleMute,
     activeTileIndex,
     setActiveTileIndex: handleSetActiveTileIndex,
     videoRefs,

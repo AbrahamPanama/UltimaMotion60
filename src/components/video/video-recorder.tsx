@@ -90,15 +90,15 @@ export function VideoRecorder() {
         tempVideo.src = URL.createObjectURL(blob);
       });
     };
-    
+
     const duration = await getDuration(recordedBlob);
 
     await addVideoToLibrary({
-        name: name,
-        blob: recordedBlob,
-        duration: duration,
-        trimStart,
-        trimEnd,
+      name: name,
+      blob: recordedBlob,
+      duration: duration,
+      trimStart,
+      trimEnd,
     });
     setRecordedBlob(null);
     recordedChunksRef.current = [];
@@ -125,7 +125,7 @@ export function VideoRecorder() {
       <Dialog open={isOpen} onOpenChange={(open) => !open && handleCloseRecorder()}>
         <Button onClick={() => setIsOpen(true)} variant="outline" className="w-full">
           <VideoIcon className="mr-2" />
-          Record Video
+          Rec. Video
         </Button>
         <DialogContent className="sm:max-w-[800px] bg-card">
           <DialogHeader>
@@ -134,13 +134,13 @@ export function VideoRecorder() {
               Record a new video clip. Aiming for 720p at 60fps.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="aspect-video w-full bg-muted rounded-md overflow-hidden">
-              <video ref={videoPreviewRef} playsInline autoPlay muted className="w-full h-full object-cover"></video>
+            <video ref={videoPreviewRef} playsInline autoPlay muted className="w-full h-full object-cover"></video>
           </div>
 
           {error && (
-              <div className="text-destructive text-sm flex items-center gap-2"><XCircle/> {error}</div>
+            <div className="text-destructive text-sm flex items-center gap-2"><XCircle /> {error}</div>
           )}
 
           <DialogFooter className="sm:justify-between items-center">
@@ -149,27 +149,27 @@ export function VideoRecorder() {
             </p>
             <div className="flex gap-2">
               <Button onClick={isRecording ? stopRecording : startRecording} className="w-[140px]">
-                  {isRecording ? (
-                      <>
-                      <Mic className="mr-2 animate-pulse" />
-                      Stop Recording
-                      </>
-                  ) : (
-                      <>
-                      <VideoIcon className="mr-2" />
-                      Start Recording
-                      </>
-                  )}
+                {isRecording ? (
+                  <>
+                    <Mic className="mr-2 animate-pulse" />
+                    Stop Recording
+                  </>
+                ) : (
+                  <>
+                    <VideoIcon className="mr-2" />
+                    Start Recording
+                  </>
+                )}
               </Button>
-               <DialogClose asChild>
-                  <Button variant="ghost">Cancel</Button>
+              <DialogClose asChild>
+                <Button variant="ghost">Cancel</Button>
               </DialogClose>
             </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      <TrimDialog 
+
+      <TrimDialog
         open={showTrimDialog}
         onOpenChange={setShowTrimDialog}
         blob={recordedBlob}

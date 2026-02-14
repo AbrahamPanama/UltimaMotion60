@@ -3,10 +3,10 @@ import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Square, Rows, Grid, RadioTower, Smartphone } from 'lucide-react';
+import { Square, Rows, Grid, RadioTower, Smartphone, Repeat, Volume2, VolumeX } from 'lucide-react';
 
 export default function MainControls() {
-  const { layout, setLayout, isSyncEnabled, toggleSync, isPortraitMode, togglePortraitMode } = useAppContext();
+  const { layout, setLayout, isSyncEnabled, toggleSync, isPortraitMode, togglePortraitMode, isLoopEnabled, toggleLoop, isMuted, toggleMute } = useAppContext();
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2 border rounded-lg bg-card">
@@ -38,6 +38,25 @@ export default function MainControls() {
         </Button>
       </div>
       <div className="flex items-center gap-4">
+        <Button
+          variant={isMuted ? 'default' : 'ghost'}
+          size="icon"
+          onClick={toggleMute}
+          title={isMuted ? 'Unmute audio' : 'Mute audio'}
+        >
+          {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        </Button>
+        <div className="flex items-center space-x-2">
+          <Repeat className="h-5 w-5 text-muted-foreground" />
+          <Label htmlFor="loop-mode" className="font-medium">
+            Loop
+          </Label>
+          <Switch
+            id="loop-mode"
+            checked={isLoopEnabled}
+            onCheckedChange={toggleLoop}
+          />
+        </div>
         <div className="flex items-center space-x-2">
           <Smartphone className="h-5 w-5 text-muted-foreground" />
           <Label htmlFor="portrait-mode" className="font-medium">

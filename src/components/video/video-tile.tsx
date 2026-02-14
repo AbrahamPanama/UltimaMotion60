@@ -25,6 +25,10 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
     videoRefs,
     isSyncEnabled,
     isPortraitMode,
+    isLoopEnabled,
+    syncOffsets,
+    updateSyncOffset,
+    isMuted,
     library,
     setSlot
   } = useAppContext();
@@ -49,29 +53,41 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
     };
   }, [index, videoRefs, video]);
 
-  // Mute/unmute based on active state
+  // Mute/unmute based on active state and global mute toggle
   useEffect(() => {
     const videoElement = videoRef.current;
     if (!videoElement) return;
-    videoElement.muted = !isActive;
-  }, [isActive]);
+    videoElement.muted = isMuted || !isActive;
+  }, [isActive, isMuted]);
 
   // Handle all video event listeners, state updates, and looping
+  // When sync is ON, looping is handled by the master clock in SyncControls
   useEffect(() => {
     const videoElement = videoRef.current;
     if (!videoElement || !video) return;
 
     const handleTimeUpdate = () => {
-      const now = videoElement.currentTime;
-      // Loop logic
-      if (video.trimEnd && now >= video.trimEnd) {
-        const wasPlaying = !videoElement.paused;
-        videoElement.currentTime = video.trimStart || 0;
-        if (wasPlaying) {
-          videoElement.play().catch(e => console.warn("Loop play failed", e));
+      // Only handle local looping when sync is OFF
+      if (!isSyncEnabled) {
+        const now = videoElement.currentTime;
+        if (isLoopEnabled && video.trimEnd && now >= video.trimEnd) {
+          const wasPlaying = !videoElement.paused;
+          const overshoot = now - video.trimEnd;
+          videoElement.currentTime = (video.trimStart || 0) + overshoot;
+          if (wasPlaying) {
+            videoElement.play().catch(e => console.warn("Loop play failed", e));
+          }
         }
       }
       setCurrentTime(videoElement.currentTime);
+    };
+
+    // Loop when video reaches natural end (only when sync is OFF)
+    const handleEnded = () => {
+      if (!isSyncEnabled && isLoopEnabled) {
+        videoElement.currentTime = video.trimStart || 0;
+        videoElement.play().catch(e => console.warn("Loop play failed", e));
+      }
     };
 
     const handleDurationChange = () => setDuration(videoElement.duration);
@@ -79,6 +95,7 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
     const handlePause = () => setIsPlaying(false);
 
     videoElement.addEventListener('timeupdate', handleTimeUpdate);
+    videoElement.addEventListener('ended', handleEnded);
     videoElement.addEventListener('durationchange', handleDurationChange);
     videoElement.addEventListener('play', handlePlay);
     videoElement.addEventListener('pause', handlePause);
@@ -91,11 +108,12 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
 
     return () => {
       videoElement.removeEventListener('timeupdate', handleTimeUpdate);
+      videoElement.removeEventListener('ended', handleEnded);
       videoElement.removeEventListener('durationchange', handleDurationChange);
       videoElement.removeEventListener('play', handlePlay);
       videoElement.removeEventListener('pause', handlePause);
     };
-  }, [video]);
+  }, [video, isLoopEnabled, isSyncEnabled]);
 
   const handlePlayPause = () => {
     const videoElement = videoRef.current;
@@ -132,6 +150,43 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
     toast({ title: 'Video Added', description: `"${selectedVideo.name}" added to slot ${index + 1}.` });
   };
 
+  const handleStep = (seconds: number) => {
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      if (isSyncEnabled) {
+        // When sync is ON, update the shared offset — master clock will apply it
+        updateSyncOffset(index, seconds);
+        // Also immediately adjust currentTime for instant visual feedback
+        videoElement.currentTime = videoElement.currentTime + seconds;
+      } else {
+        // When sync is OFF, directly adjust currentTime (local only)
+        const start = video?.trimStart || 0;
+        const end = video?.trimEnd || videoElement.duration;
+        videoElement.currentTime = Math.max(start, Math.min(videoElement.currentTime + seconds, end));
+      }
+      setCurrentTime(videoElement.currentTime);
+    }
+  };
+
+  // Render helper (returns JSX, NOT a component — avoids unmount/remount on re-render)
+  const renderStepBtn = (seconds: number, size: number) => {
+    const isNeg = seconds < 0;
+    return (
+      <button
+        key={seconds}
+        onClick={(e) => { e.stopPropagation(); handleStep(seconds); }}
+        className="flex-shrink-0 text-primary hover:text-primary/80 active:scale-90 transition-all"
+        title={`${isNeg ? '' : '+'}${seconds}s`}
+      >
+        <svg width={size} height={size} viewBox="0 0 40 40" fill="currentColor">
+          <circle cx="20" cy="20" r="19" />
+          <rect x="10" y="17.5" width="20" height="5" rx="1" fill="white" />
+          {!isNeg && <rect x="17.5" y="10" width="5" height="20" rx="1" fill="white" />}
+        </svg>
+      </button>
+    );
+  };
+
 
   if (!video) {
     return (
@@ -140,7 +195,7 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
           <div
             suppressHydrationWarning
             className={cn(
-              "bg-muted/50 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-primary transition-colors",
+              "bg-muted/50 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-primary transition-colors max-h-full",
               isPortraitMode ? 'aspect-[9/16]' : 'aspect-video'
             )}
           >
@@ -168,8 +223,8 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
   return (
     <div
       className={cn(
-        'relative bg-black rounded-lg overflow-hidden group transition-all duration-300',
-        isPortraitMode ? 'aspect-[9/16]' : 'aspect-video',
+        'relative bg-black rounded-lg overflow-hidden flex flex-col transition-all duration-300',
+        isPortraitMode ? 'h-full aspect-[9/16]' : 'w-full h-full',
         isActive ? 'ring-4 ring-primary shadow-2xl' : 'ring-2 ring-transparent'
       )}
       onClick={() => setActiveTileIndex(index)}
@@ -178,11 +233,21 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
         ref={videoRef}
         src={video.url}
         className={cn(
-          'w-full h-full',
+          'w-full flex-1 min-h-0',
           isPortraitMode ? 'object-cover' : 'object-contain'
         )}
         playsInline
       />
+      {/* Step buttons bar */}
+      <div className="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-black/70" onClick={e => e.stopPropagation()}>
+        {renderStepBtn(-0.5, 32)}
+        {renderStepBtn(-0.25, 26)}
+        {renderStepBtn(-0.15, 20)}
+        <div className="w-6" />
+        {renderStepBtn(0.15, 20)}
+        {renderStepBtn(0.25, 26)}
+        {renderStepBtn(0.5, 32)}
+      </div>
       <PlayerControls
         isPlaying={isPlaying}
         onPlayPause={handlePlayPause}
@@ -192,7 +257,9 @@ export default function VideoTile({ video, index, isActive }: VideoTileProps) {
         playbackRate={playbackRate}
         onRateChange={handleRateChange}
         isSyncEnabled={isSyncEnabled}
+        variant="static"
       />
     </div>
   );
 }
+
